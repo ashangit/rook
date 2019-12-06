@@ -176,3 +176,61 @@ func placementTestGenerateNodeAffinity() *v1.NodeAffinity {
 		},
 	}
 }
+
+func testPodSpecPlacement(t *testing.T, hostNet, allowMulti bool, req, pref int, placement *Placement) {
+	spec := v1.PodSpec{
+		InitContainers: []v1.Container{},
+		Containers:     []v1.Container{},
+		RestartPolicy:  v1.RestartPolicyAlways,
+		HostNetwork:    hostNet,
+	}
+	placement.SetPodPlacement(&spec, nil, hostNet, allowMulti, map[string]string{
+		"app": "mon",
+	})
+
+	// should have a required anti-affinity and no preferred anti-affinity
+	assert.Equal(t,
+		req,
+		len(spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution))
+	assert.Equal(t,
+		pref,
+		len(spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution))
+}
+
+func makePlacement() Placement {
+	return Placement{
+		PodAntiAffinity: &v1.PodAntiAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
+				{
+					TopologyKey: v1.LabelZoneFailureDomain,
+				},
+			},
+			PreferredDuringSchedulingIgnoredDuringExecution: []v1.WeightedPodAffinityTerm{
+				{
+					PodAffinityTerm: v1.PodAffinityTerm{
+						TopologyKey: v1.LabelZoneFailureDomain,
+					},
+				},
+			},
+		},
+	}
+}
+
+func TestPodSpecPlacement(t *testing.T) {
+	// no placement settings in the crd
+	p := Placement{}
+	testPodSpecPlacement(t, true, true, 1, 0, &p)
+	testPodSpecPlacement(t, true, false, 1, 0, &p)
+	testPodSpecPlacement(t, false, true, 0, 1, &p)
+	testPodSpecPlacement(t, false, false, 1, 0, &p)
+
+	// crd has other preferred and required anti-affinity setting
+	p = makePlacement()
+	testPodSpecPlacement(t, true, true, 2, 1, &p)
+	p = makePlacement()
+	testPodSpecPlacement(t, true, false, 2, 1, &p)
+	p = makePlacement()
+	testPodSpecPlacement(t, false, true, 1, 2, &p)
+	p = makePlacement()
+	testPodSpecPlacement(t, false, false, 2, 1, &p)
+}
