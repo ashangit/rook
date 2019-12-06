@@ -18,7 +18,6 @@ package object
 
 import (
 	"fmt"
-
 	"github.com/rook/rook/pkg/operator/ceph/cluster/mon"
 	cephconfig "github.com/rook/rook/pkg/operator/ceph/config"
 	opspec "github.com/rook/rook/pkg/operator/ceph/spec"
@@ -88,7 +87,13 @@ func (c *clusterConfig) makeRGWPodSpec(rgwConfig *rgwConfig) v1.PodTemplateSpec 
 					}}}}
 		podSpec.Volumes = append(podSpec.Volumes, certVol)
 	}
-	c.store.Spec.Gateway.Placement.ApplyToPodSpec(&podSpec)
+
+	matchLabels := map[string]string{
+		k8sutil.AppAttr: AppName,
+		"rgw":           c.store.Name,
+	}
+	c.store.Spec.Gateway.Placement.SetPodPlacement(&podSpec, nil, c.clusterSpec.Network.IsHost(), true,
+		matchLabels)
 
 	podTemplateSpec := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
