@@ -423,7 +423,8 @@ func realScheduleMonitor(c *Cluster, mon *monConfig) (SchedulingResult, error) {
 
 	// setup affinity settings for pod scheduling
 	p := cephv1.GetMonPlacement(c.spec.Placement)
-	c.setPodPlacement(&d.Spec.Template.Spec, p, nil)
+	p.SetPodPlacement(&d.Spec.Template.Spec, nil, c.Network.IsHost(),
+		c.spec.Mon.AllowMultiplePerNode, map[string]string{k8sutil.AppAttr: AppName})
 
 	// setup storage on the canary since scheduling will be affected when
 	// monitors are configured to use persistent volumes. the pvcName is set to
@@ -873,10 +874,11 @@ func (c *Cluster) startMon(m *monConfig, node *NodeInfo) error {
 		if c.Network.IsHost() || !pvcExists {
 			p.PodAffinity = nil
 			p.PodAntiAffinity = nil
-			c.setPodPlacement(&d.Spec.Template.Spec, p,
-				existingDeployment.Spec.Template.Spec.NodeSelector)
+			p.SetPodPlacement(&d.Spec.Template.Spec, existingDeployment.Spec.Template.Spec.NodeSelector,
+				c.Network.IsHost(), c.spec.Mon.AllowMultiplePerNode, map[string]string{k8sutil.AppAttr: AppName})
 		} else {
-			c.setPodPlacement(&d.Spec.Template.Spec, p, nil)
+			p.SetPodPlacement(&d.Spec.Template.Spec, nil, c.Network.IsHost(),
+				c.spec.Mon.AllowMultiplePerNode, map[string]string{k8sutil.AppAttr: AppName})
 		}
 		return c.updateMon(m, d)
 	}
@@ -897,12 +899,14 @@ func (c *Cluster) startMon(m *monConfig, node *NodeInfo) error {
 	}
 
 	if node == nil {
-		c.setPodPlacement(&d.Spec.Template.Spec, p, nil)
+		p.SetPodPlacement(&d.Spec.Template.Spec, nil, c.Network.IsHost(),
+			c.spec.Mon.AllowMultiplePerNode, map[string]string{k8sutil.AppAttr: AppName})
 	} else {
 		p.PodAffinity = nil
 		p.PodAntiAffinity = nil
-		c.setPodPlacement(&d.Spec.Template.Spec, p,
-			map[string]string{v1.LabelHostname: node.Hostname})
+		p.SetPodPlacement(&d.Spec.Template.Spec,
+			map[string]string{v1.LabelHostname: node.Hostname}, c.Network.IsHost(),
+			c.spec.Mon.AllowMultiplePerNode, map[string]string{k8sutil.AppAttr: AppName})
 	}
 
 	logger.Debugf("Starting mon: %+v", d.Name)

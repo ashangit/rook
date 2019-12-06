@@ -17,10 +17,55 @@ package v1alpha2
 
 import (
 	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (p PlacementSpec) All() Placement {
 	return p[KeyAll]
+}
+
+/*
+ * Pod spec
+ */
+
+func (p Placement) SetPodPlacement(pod *v1.PodSpec, nodeSelector map[string]string, isHostNetwork, allowMultiplePerNode bool, matchLabels map[string]string) {
+	p.ApplyToPodSpec(pod)
+	pod.NodeSelector = nodeSelector
+
+	// when a node selector is being used, skip the affinity business below
+	if nodeSelector != nil {
+		return
+	}
+
+	// label selector for monitors used in anti-affinity rules
+	podAntiAffinity := v1.PodAffinityTerm{
+		LabelSelector: &metav1.LabelSelector{
+			MatchLabels: matchLabels,
+		},
+		TopologyKey: v1.LabelHostname,
+	}
+
+	// set pod anti-affinity rules. when pods should never be
+	// co-located (e.g. not AllowMultiplePerHost or HostNetworking) then the
+	// anti-affinity rule is made to be required during scheduling, otherwise it
+	// is merely a preferred policy.
+	//
+	// ApplyToPodSpec ensures that pod.Affinity is non-nil
+	if pod.Affinity.PodAntiAffinity == nil {
+		pod.Affinity.PodAntiAffinity = &v1.PodAntiAffinity{}
+	}
+	paa := pod.Affinity.PodAntiAffinity
+
+	if isHostNetwork || !allowMultiplePerNode {
+		paa.RequiredDuringSchedulingIgnoredDuringExecution =
+			append(paa.RequiredDuringSchedulingIgnoredDuringExecution, podAntiAffinity)
+	} else {
+		paa.PreferredDuringSchedulingIgnoredDuringExecution =
+			append(paa.PreferredDuringSchedulingIgnoredDuringExecution, v1.WeightedPodAffinityTerm{
+				Weight:          50,
+				PodAffinityTerm: podAntiAffinity,
+			})
+	}
 }
 
 // ApplyToPodSpec adds placement to a pod spec
