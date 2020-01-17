@@ -373,6 +373,9 @@ type GatewaySpec struct {
 	// Whether the rgw pods should be started as a daemonset on all nodes
 	AllNodes bool `json:"allNodes"`
 
+	//
+	DnsNameForVirtualHostedStyle string `json:"dnsNameForVirtualHostedStyle"`
+
 	// The name of the secret that stores the ssl certificate for secure rgw connections
 	SSLCertificateRef string `json:"sslCertificateRef"`
 

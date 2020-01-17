@@ -156,6 +156,11 @@ func (c *clusterConfig) makeDaemonContainer(rgwConfig *rgwConfig) v1.Container {
 		SecurityContext: mon.PodSecurityContext(),
 	}
 
+	if c.store.Spec.Gateway.DnsNameForVirtualHostedStyle != "" {
+		dnsNameForVirtualHostedStyle := cephconfig.NewFlag("rgw-dns-name", c.store.Spec.Gateway.DnsNameForVirtualHostedStyle)
+		container.Args = append(container.Args, dnsNameForVirtualHostedStyle)
+	}
+
 	if c.store.Spec.Gateway.SSLCertificateRef != "" {
 		// Add a volume mount for the ssl certificate
 		mount := v1.VolumeMount{Name: certVolumeName, MountPath: certDir, ReadOnly: true}
