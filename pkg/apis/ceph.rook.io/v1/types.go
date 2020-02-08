@@ -330,6 +330,10 @@ type ObjectStoreSpec struct {
 	// Preserve pools on object store deletion
 	PreservePoolsOnDelete bool `json:"preservePoolsOnDelete"`
 
+	// DNS name of the served domain used for DNS subdomain
+	// style bucket access
+	DnsName string `json:"dnsNam,omitempty"`
+
 	// The rgw pod info
 	Gateway GatewaySpec `json:"gateway"`
 }

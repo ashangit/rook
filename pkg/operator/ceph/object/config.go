@@ -132,6 +132,10 @@ func (c *clusterConfig) setDefaultFlagsMonConfigStore(rgwName string) error {
 	configOptions["rgw_zone"] = c.store.Name
 	configOptions["rgw_zonegroup"] = c.store.Name
 
+	if c.store.Spec.DnsName != "" {
+		configOptions["rgw_dns_name"] = c.store.Spec.DnsName
+	}
+
 	for flag, val := range configOptions {
 		err := monStore.Set(who, flag, val)
 		if err != nil {
