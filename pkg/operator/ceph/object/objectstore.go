@@ -320,8 +320,23 @@ func createSimilarPools(context *Context, pools []string, poolSpec cephv1.PoolSp
 						return errors.Wrapf(err, "failed to set size property to replicated pool %q to %d", poolDetails.Name, poolSpec.Replicated.Size)
 					}
 				}
+
+				targetSizeRatioProperty := "target_size_ratio"
+				if poolSpec.Replicated.TargetSizeRatio != 0 && poolDetails.TargetSizeRatio != poolSpec.Replicated.TargetSizeRatio {
+					err = ceph.SetPoolProperty(context.Context, context.ClusterName, poolDetails.Name, targetSizeRatioProperty, strconv.FormatFloat(poolSpec.Replicated.TargetSizeRatio, 'f', -1, 32))
+					if err != nil {
+						return errors.Wrapf(err, "failed to set property %q to replicated pool %q to %.2f", targetSizeRatioProperty, poolDetails.Name, poolSpec.Replicated.TargetSizeRatio)
+					}
+				}
 			}
-			if pgCount != ceph.DefaultPGCount {
+
+			if err = ceph.SetCommonPoolProperties(context.Context, poolSpec, context.ClusterName, poolDetails.Name, AppName); err != nil {
+				return err
+			}
+
+			defaultPgNumMin, err := strconv.Atoi(ceph.DefaultPGCount)
+			// TODO treat issue here
+			if pgCount != ceph.DefaultPGCount && poolDetails.PgNumMin == defaultPgNumMin {
 				err = ceph.SetPoolProperty(context.Context, context.ClusterName, name, "pg_num_min", pgCount)
 				if err != nil {
 					return errors.Wrapf(err, "failed to set pg_num_min on pool %q to %q", name, pgCount)

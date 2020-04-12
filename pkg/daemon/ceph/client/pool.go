@@ -46,6 +46,7 @@ type CephStoragePoolDetails struct {
 	CrushRoot              string  `json:"crushRoot"`
 	DeviceClass            string  `json:"deviceClass"`
 	CompressionMode        string  `json:"compression_mode"`
+	PgNumMin               int     `json:"pg_num_min,omitempty"`
 	TargetSizeRatio        float64 `json:"target_size_ratio,omitempty"`
 	RequireSafeReplicaSize bool    `json:"requireSafeReplicaSize,omitempty"`
 }
@@ -231,7 +232,7 @@ func givePoolAppTag(context *clusterd.Context, namespace string, poolName string
 	return nil
 }
 
-func setCommonPoolProperties(context *clusterd.Context, pool cephv1.PoolSpec, namespace, poolName, appName string) error {
+func SetCommonPoolProperties(context *clusterd.Context, pool cephv1.PoolSpec, namespace, poolName, appName string) error {
 	compressionModeProperty := "compression_mode"
 	if pool.CompressionMode != "" {
 		err := SetPoolProperty(context, namespace, poolName, compressionModeProperty, pool.CompressionMode)
@@ -268,7 +269,7 @@ func CreateECPoolForApp(context *clusterd.Context, namespace, poolName, ecProfil
 		}
 	}
 
-	if err = setCommonPoolProperties(context, pool, namespace, poolName, appName); err != nil {
+	if err = SetCommonPoolProperties(context, pool, namespace, poolName, appName); err != nil {
 		return err
 	}
 
@@ -301,7 +302,7 @@ func CreateReplicatedPoolForApp(context *clusterd.Context, namespace, poolName s
 		}
 	}
 
-	if err = setCommonPoolProperties(context, pool, namespace, poolName, appName); err != nil {
+	if err = SetCommonPoolProperties(context, pool, namespace, poolName, appName); err != nil {
 		return err
 	}
 
