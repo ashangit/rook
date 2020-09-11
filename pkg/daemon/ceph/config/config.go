@@ -57,13 +57,14 @@ var (
 
 // GlobalConfig represents the [global] sections of Ceph's config file.
 type GlobalConfig struct {
-	FSID           string `ini:"fsid,omitempty"`
-	MonMembers     string `ini:"mon initial members,omitempty"`
-	MonHost        string `ini:"mon host"`
-	PublicAddr     string `ini:"public addr,omitempty"`
-	PublicNetwork  string `ini:"public network,omitempty"`
-	ClusterAddr    string `ini:"cluster addr,omitempty"`
-	ClusterNetwork string `ini:"cluster network,omitempty"`
+	FSID                     string `ini:"fsid,omitempty"`
+	MonMembers               string `ini:"mon initial members,omitempty"`
+	MonHost                  string `ini:"mon host"`
+	PublicAddr               string `ini:"public addr,omitempty"`
+	PublicNetwork            string `ini:"public network,omitempty"`
+	ClusterAddr              string `ini:"cluster addr,omitempty"`
+	ClusterNetwork           string `ini:"cluster network,omitempty"`
+	BluestoreMinAllocSizeHdd string `ini:"bluestore_min_alloc_size_hdd,omitempty"`
 }
 
 // CephConfig represents an entire Ceph config including all sections.
@@ -178,13 +179,14 @@ func CreateDefaultCephConfig(context *clusterd.Context, cluster *ClusterInfo) (*
 
 	conf := &CephConfig{
 		GlobalConfig: &GlobalConfig{
-			FSID:           cluster.FSID,
-			MonMembers:     strings.Join(monMembers, " "),
-			MonHost:        strings.Join(monHosts, ","),
-			PublicAddr:     context.NetworkInfo.PublicAddr,
-			PublicNetwork:  context.NetworkInfo.PublicNetwork,
-			ClusterAddr:    context.NetworkInfo.ClusterAddr,
-			ClusterNetwork: context.NetworkInfo.ClusterNetwork,
+			FSID:                     cluster.FSID,
+			MonMembers:               strings.Join(monMembers, " "),
+			MonHost:                  strings.Join(monHosts, ","),
+			PublicAddr:               context.NetworkInfo.PublicAddr,
+			PublicNetwork:            context.NetworkInfo.PublicNetwork,
+			ClusterAddr:              context.NetworkInfo.ClusterAddr,
+			ClusterNetwork:           context.NetworkInfo.ClusterNetwork,
+			BluestoreMinAllocSizeHdd: "4096",
 		},
 	}
 
